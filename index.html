@@ -647,1129 +647,1079 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // Firebase configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAh0iCswFon37lAZG9Obr53AYLbLd1rm98",
-      authDomain: "eduhub-4f629.firebaseapp.com",
-      databaseURL: "https://eduhub-4f629-default-rtdb.firebaseio.com",
-      projectId: "eduhub-4f629",
-      storageBucket: "eduhub-4f629.appspot.com",
-      messagingSenderId: "483026976450",
-      appId: "1:483026976450:web:827bf2dc9c7d6858e2055b"
-    };
-
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const database = firebase.database();
-    const storage = firebase.storage();
     
-    // Initialize FirebaseUI
-    const ui = new firebaseui.auth.AuthUI(auth);
-    
-    // FirebaseUI config
-    const uiConfig = {
-      signInSuccessUrl: '#',
-      signInOptions: [
-        {
-          provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-          customParameters: {
-            prompt: 'select_account'
-          }
-        },
-        firebase.auth.EmailAuthProvider.PROVIDER_ID
-      ],
-      tosUrl: '#',
-      privacyPolicyUrl: '#',
-      callbacks: {
-        signInSuccessWithAuthResult: function(authResult, redirectUrl) {
-          handleSignedInUser(authResult.user);
-          document.getElementById('firebaseui-auth-container').style.display = 'none';
-          
-          // Close any reauth modal if open
-          const reauthModal = bootstrap.Modal.getInstance(document.getElementById('reauthModal'));
-          if (reauthModal) reauthModal.hide();
-          
-          // Show welcome toast
-          showToast(`Welcome, ${authResult.user.displayName || 'User'}!`);
-          
-          return false;
-        },
-        uiShown: function() {
-          document.getElementById('loader').style.display = 'none';
-        }
-      },
-      credentialHelper: firebaseui.auth.CredentialHelper.NONE
-    };
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAh0iCswFon37lAZG9Obr53AYLbLd1rm98",
+  authDomain: "eduhub-4f629.firebaseapp.com",
+  databaseURL: "https://eduhub-4f629-default-rtdb.firebaseio.com",
+  projectId: "eduhub-4f629",
+  storageBucket: "eduhub-4f629.appspot.com",
+  messagingSenderId: "483026976450",
+  appId: "1:483026976450:web:827bf2dc9c7d6858e2055b"
+};
 
-    // Global user reference
-    let currentUser = null;
-    let authModal = null;
-    let toast = null;
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const database = firebase.database();
+const storage = firebase.storage();
 
-    // Initialize Toast
-    document.addEventListener('DOMContentLoaded', function() {
-      toast = new bootstrap.Toast(document.getElementById('toast'));
-    });
+// Initialize FirebaseUI
+const ui = new firebaseui.auth.AuthUI(auth);
 
-    // Show toast notification
-    function showToast(message, isError = false) {
-      const toastElement = document.getElementById('toast');
-      const toastMessage = document.getElementById('toastMessage');
-      
-      toastElement.classList.remove('bg-success', 'bg-danger');
-      toastElement.classList.add(isError ? 'bg-danger' : 'bg-success');
-      toastMessage.textContent = message;
-      
-      const bsToast = new bootstrap.Toast(toastElement);
-      bsToast.show();
-    }
-
-    // DOM Elements
-    const homeBtn = document.getElementById('homeBtn');
-    const createBtn = document.getElementById('createBtn');
-    const profileBtn = document.getElementById('profileBtn');
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const userEmail = document.getElementById('userEmail');
-    const userName = document.getElementById('userName');
-    const userTitle = document.getElementById('userTitle');
-    const userBio = document.getElementById('userBio');
-    const userEducation = document.getElementById('userEducation');
-    const userLocation = document.getElementById('userLocation');
-    const userEmailDisplay = document.getElementById('userEmailDisplay');
-    const profileImage = document.getElementById('profileImage');
-    const coverImage = document.getElementById('coverImage');
-    const postCount = document.getElementById('postCount');
-    const followerCount = document.getElementById('followerCount');
-    const followingCount = document.getElementById('followingCount');
-    const editProfilePicBtn = document.getElementById('editProfilePicBtn');
-    const editCoverBtn = document.getElementById('editCoverBtn');
-    const profileImageUpload = document.getElementById('profileImageUpload');
-    const coverImageUpload = document.getElementById('coverImageUpload');
-    const saveProfileChangesBtn = document.getElementById('saveProfileChangesBtn');
-    const editName = document.getElementById('editName');
-    const editTitle = document.getElementById('editTitle');
-    const editBio = document.getElementById('editBio');
-    const editEducation = document.getElementById('editEducation');
-    const editLocation = document.getElementById('editLocation');
-    const postContent = document.getElementById('postContent');
-    const postImageUpload = document.getElementById('postImageUpload');
-    const uploadImageBtn = document.getElementById('uploadImageBtn');
-    const imageName = document.getElementById('imageName');
-    const postUpdateBtn = document.getElementById('postUpdateBtn');
-    const recentPosts = document.getElementById('recentPosts');
-    const allPosts = document.getElementById('allPosts');
-    const certificateUpload = document.getElementById('certificateUpload');
-    const addCertificateBtn = document.getElementById('addCertificateBtn');
-    const certificatesList = document.getElementById('certificatesList');
-    const allCertificates = document.getElementById('allCertificates');
-    const searchBtn = document.getElementById('searchBtn');
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-    const feedPosts = document.getElementById('feedPosts');
-    const uploadPostBtn = document.getElementById('uploadPostBtn');
-    const postImageInput = document.getElementById('postImageInput');
-    const postPreview = document.getElementById('postPreview');
-    const postPreviewImage = document.getElementById('postPreviewImage');
-    const postCaption = document.getElementById('postCaption');
-    const sharePostBtn = document.getElementById('sharePostBtn');
-    const suggestionsList = document.getElementById('suggestionsList');
-    const storiesContainer = document.querySelector('.stories-container');
-    const uploadSection = document.getElementById('uploadSection');
-
-    // Initialize modals
-    document.addEventListener('DOMContentLoaded', function() {
-      authModal = new bootstrap.Modal(document.getElementById('reauthModal'));
-      
-      // Check auth state when modal is shown
-      document.getElementById('profileModal').addEventListener('shown.bs.modal', function() {
-        if (!currentUser) {
-          showLoginModal();
-        }
-      });
-    });
-
-    // Auth State Observer
-    auth.onAuthStateChanged(function(user) {
-      console.log("Auth state changed. User:", user ? user.uid : "null");
-      currentUser = user;
-      if (user) {
-        handleSignedInUser(user);
-        startTokenRefreshTimer();
-        loadStories();
-        loadSuggestions();
-        loadFeedPosts();
-      } else {
-        handleSignedOutUser();
+// FirebaseUI config
+const uiConfig = {
+  signInSuccessUrl: '#',
+  signInOptions: [
+    {
+      provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+      customParameters: {
+        prompt: 'select_account'
       }
-    }, function(error) {
-      console.error("Auth state observer error:", error);
-    });
-
-    // Token refresh management
-    let tokenRefreshTimer;
-    function startTokenRefreshTimer() {
-      // Clear existing timer if any
-      if (tokenRefreshTimer) clearInterval(tokenRefreshTimer);
+    },
+    firebase.auth.EmailAuthProvider.PROVIDER_ID
+  ],
+  tosUrl: '#',
+  privacyPolicyUrl: '#',
+  callbacks: {
+    signInSuccessWithAuthResult: function(authResult, redirectUrl) {
+      handleSignedInUser(authResult.user);
+      document.getElementById('firebaseui-auth-container').style.display = 'none';
+      ui.reset();
       
-      // Refresh token every 30 minutes
-      tokenRefreshTimer = setInterval(async () => {
-        try {
-          if (currentUser) {
-            const token = await currentUser.getIdToken(true);
-            console.log('Token refreshed at', new Date().toISOString());
-          }
-        } catch (error) {
-          console.error('Token refresh error:', error);
-          if (error.code === 'auth/user-token-expired') {
-            showReauthModal();
-          }
-        }
-      }, 30 * 60 * 1000); // 30 minutes
-    }
-
-    // Event Listeners
-    homeBtn?.addEventListener('click', showFeed);
-    createBtn?.addEventListener('click', () => {
-      if (!currentUser) {
-        showLoginModal();
-      } else {
-        new bootstrap.Modal(document.getElementById('createPostModal')).show();
-      }
-    });
-    profileBtn?.addEventListener('click', () => {
-      if (!currentUser) {
-        showLoginModal();
-      } else {
-        new bootstrap.Modal(document.getElementById('profileModal')).show();
-      }
-    });
-    loginBtn?.addEventListener('click', showLoginModal);
-    logoutBtn?.addEventListener('click', handleSignOut);
-    editProfilePicBtn?.addEventListener('click', () => profileImageUpload?.click());
-    editCoverBtn?.addEventListener('click', () => coverImageUpload?.click());
-    profileImageUpload?.addEventListener('change', uploadProfileImage);
-    coverImageUpload?.addEventListener('change', uploadCoverImage);
-    saveProfileChangesBtn?.addEventListener('click', saveProfileChanges);
-    uploadImageBtn?.addEventListener('click', () => postImageUpload?.click());
-    postImageUpload?.addEventListener('change', handlePostImageSelect);
-    postUpdateBtn?.addEventListener('click', createPost);
-    addCertificateBtn?.addEventListener('click', () => certificateUpload?.click());
-    certificateUpload?.addEventListener('change', uploadCertificate);
-    searchBtn?.addEventListener('click', searchUsers);
-    uploadPostBtn?.addEventListener('click', () => postImageInput?.click());
-    postImageInput?.addEventListener('change', handleImageSelect);
-    sharePostBtn?.addEventListener('click', sharePost);
-
-    function showLoginModal() {
-      document.getElementById('firebaseui-auth-container').style.display = 'flex';
-      ui.start('#firebaseui-auth-container', uiConfig);
-    }
-
-    function showReauthModal() {
-      // Start FirebaseUI for reauthentication
-      ui.start('#reauth-container', {
-        signInOptions: [
-          firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-          firebase.auth.EmailAuthProvider.PROVIDER_ID
-        ],
-        signInSuccessUrl: '#',
-        callbacks: {
-          signInSuccessWithAuthResult: function(authResult) {
-            handleSignedInUser(authResult.user);
-            authModal.hide();
-            return false;
-          }
-        }
-      });
-      authModal.show();
-    }
-
-    async function verifyAuth() {
-      if (!currentUser) {
-        showLoginModal();
-        return false;
-      }
+      // Close any reauth modal if open
+      const reauthModal = bootstrap.Modal.getInstance(document.getElementById('reauthModal'));
+      if (reauthModal) reauthModal.hide();
       
-      try {
-        // Force token refresh to check validity
-        await currentUser.getIdToken(true);
-        return true;
-      } catch (error) {
-        console.error('Auth verification failed:', error);
+      showToast(`Welcome, ${authResult.user.displayName || 'User'}!`);
+      return false;
+    },
+    uiShown: function() {
+      document.getElementById('loader').style.display = 'none';
+    }
+  },
+  credentialHelper: firebaseui.auth.CredentialHelper.NONE
+};
+
+// Global user reference
+let currentUser = null;
+let authModal = null;
+let toast = null;
+
+// Initialize Toast
+document.addEventListener('DOMContentLoaded', function() {
+  toast = new bootstrap.Toast(document.getElementById('toast'));
+});
+
+// Show toast notification
+function showToast(message, isError = false) {
+  const toastElement = document.getElementById('toast');
+  const toastMessage = document.getElementById('toastMessage');
+  
+  toastElement.classList.remove('bg-success', 'bg-danger');
+  toastElement.classList.add(isError ? 'bg-danger' : 'bg-success');
+  toastMessage.textContent = message;
+  
+  const bsToast = new bootstrap.Toast(toastElement);
+  bsToast.show();
+}
+
+// DOM Elements
+const homeBtn = document.getElementById('homeBtn');
+const createBtn = document.getElementById('createBtn');
+const profileBtn = document.getElementById('profileBtn');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const userEmail = document.getElementById('userEmail');
+const userName = document.getElementById('userName');
+const userTitle = document.getElementById('userTitle');
+const userBio = document.getElementById('userBio');
+const userEducation = document.getElementById('userEducation');
+const userLocation = document.getElementById('userLocation');
+const userEmailDisplay = document.getElementById('userEmailDisplay');
+const profileImage = document.getElementById('profileImage');
+const coverImage = document.getElementById('coverImage');
+const postCount = document.getElementById('postCount');
+const followerCount = document.getElementById('followerCount');
+const followingCount = document.getElementById('followingCount');
+const editProfilePicBtn = document.getElementById('editProfilePicBtn');
+const editCoverBtn = document.getElementById('editCoverBtn');
+const profileImageUpload = document.getElementById('profileImageUpload');
+const coverImageUpload = document.getElementById('coverImageUpload');
+const saveProfileChangesBtn = document.getElementById('saveProfileChangesBtn');
+const editName = document.getElementById('editName');
+const editTitle = document.getElementById('editTitle');
+const editBio = document.getElementById('editBio');
+const editEducation = document.getElementById('editEducation');
+const editLocation = document.getElementById('editLocation');
+const postContent = document.getElementById('postContent');
+const postImageUpload = document.getElementById('postImageUpload');
+const uploadImageBtn = document.getElementById('uploadImageBtn');
+const imageName = document.getElementById('imageName');
+const postUpdateBtn = document.getElementById('postUpdateBtn');
+const recentPosts = document.getElementById('recentPosts');
+const allPosts = document.getElementById('allPosts');
+const certificateUpload = document.getElementById('certificateUpload');
+const addCertificateBtn = document.getElementById('addCertificateBtn');
+const certificatesList = document.getElementById('certificatesList');
+const allCertificates = document.getElementById('allCertificates');
+const searchBtn = document.getElementById('searchBtn');
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+const feedPosts = document.getElementById('feedPosts');
+const uploadPostBtn = document.getElementById('uploadPostBtn');
+const postImageInput = document.getElementById('postImageInput');
+const postPreview = document.getElementById('postPreview');
+const postPreviewImage = document.getElementById('postPreviewImage');
+const postCaption = document.getElementById('postCaption');
+const sharePostBtn = document.getElementById('sharePostBtn');
+const suggestionsList = document.getElementById('suggestionsList');
+const storiesContainer = document.querySelector('.stories-container');
+const uploadSection = document.getElementById('uploadSection');
+
+// Initialize modals
+document.addEventListener('DOMContentLoaded', function() {
+  authModal = new bootstrap.Modal(document.getElementById('reauthModal'));
+  
+  document.getElementById('profileModal').addEventListener('shown.bs.modal', function() {
+    if (!currentUser) {
+      showLoginModal();
+    } else {
+      document.getElementById('firebaseui-auth-container').style.display = 'none';
+      ui.reset();
+    }
+  });
+});
+
+// Auth State Observer
+auth.onAuthStateChanged(function(user) {
+  console.log("Auth state changed. User:", user ? user.uid : "null");
+  currentUser = user;
+  if (user) {
+    handleSignedInUser(user);
+    startTokenRefreshTimer();
+    loadStories();
+    loadSuggestions();
+    loadFeedPosts();
+  } else {
+    handleSignedOutUser();
+    document.getElementById('firebaseui-auth-container').style.display = 'none';
+    ui.reset();
+  }
+}, function(error) {
+  console.error("Auth state observer error:", error);
+});
+
+// Token refresh management
+let tokenRefreshTimer;
+function startTokenRefreshTimer() {
+  if (tokenRefreshTimer) clearInterval(tokenRefreshTimer);
+  
+  tokenRefreshTimer = setInterval(async () => {
+    try {
+      if (currentUser) {
+        const token = await currentUser.getIdToken(true);
+        console.log('Token refreshed at', new Date().toISOString());
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      if (error.code === 'auth/user-token-expired') {
         showReauthModal();
+      }
+    }
+  }, 30 * 60 * 1000);
+}
+
+// Event Listeners
+homeBtn?.addEventListener('click', showFeed);
+createBtn?.addEventListener('click', () => {
+  if (!currentUser) {
+    showLoginModal();
+  } else {
+    new bootstrap.Modal(document.getElementById('createPostModal')).show();
+  }
+});
+profileBtn?.addEventListener('click', () => {
+  if (!currentUser) {
+    showLoginModal();
+  } else {
+    new bootstrap.Modal(document.getElementById('profileModal')).show();
+  }
+});
+loginBtn?.addEventListener('click', showLoginModal);
+logoutBtn?.addEventListener('click', handleSignOut);
+editProfilePicBtn?.addEventListener('click', () => profileImageUpload?.click());
+editCoverBtn?.addEventListener('click', () => coverImageUpload?.click());
+profileImageUpload?.addEventListener('change', uploadProfileImage);
+coverImageUpload?.addEventListener('change', uploadCoverImage);
+saveProfileChangesBtn?.addEventListener('click', saveProfileChanges);
+uploadImageBtn?.addEventListener('click', () => postImageUpload?.click());
+postImageUpload?.addEventListener('change', handlePostImageSelect);
+postUpdateBtn?.addEventListener('click', createPost);
+addCertificateBtn?.addEventListener('click', () => certificateUpload?.click());
+certificateUpload?.addEventListener('change', uploadCertificate);
+searchBtn?.addEventListener('click', searchUsers);
+uploadPostBtn?.addEventListener('click', () => postImageInput?.click());
+postImageInput?.addEventListener('change', handleImageSelect);
+sharePostBtn?.addEventListener('click', sharePost);
+
+function showLoginModal() {
+  if (!currentUser && document.getElementById('firebaseui-auth-container').style.display !== 'flex') {
+    document.getElementById('firebaseui-auth-container').style.display = 'flex';
+    ui.start('#firebaseui-auth-container', uiConfig);
+  }
+}
+
+function showReauthModal() {
+  ui.start('#reauth-container', {
+    signInOptions: [
+      firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+      firebase.auth.EmailAuthProvider.PROVIDER_ID
+    ],
+    signInSuccessUrl: '#',
+    callbacks: {
+      signInSuccessWithAuthResult: function(authResult) {
+        handleSignedInUser(authResult.user);
+        authModal.hide();
         return false;
       }
     }
+  });
+  authModal.show();
+}
 
-    async function handleSignOut() {
-      try {
-        await auth.signOut();
-        console.log("User signed out successfully");
-        showToast('You have been signed out successfully');
-        
-        // Clear any cached user data
-        currentUser = null;
-      } catch (error) {
-        console.error('Sign out error:', error);
-        showToast('Error signing out: ' + error.message, true);
-      }
-    }
+async function verifyAuth() {
+  if (!currentUser) {
+    showLoginModal();
+    return false;
+  }
+  
+  try {
+    await currentUser.getIdToken(true);
+    return true;
+  } catch (error) {
+    console.error('Auth verification failed:', error);
+    showReauthModal();
+    return false;
+  }
+}
 
-    function handleSignedInUser(user) {
-      console.log("Handling signed in user:", user.uid);
-      loginBtn?.classList?.add('d-none');
-      logoutBtn?.classList?.remove('d-none');
-      if (userEmail) userEmail.textContent = user.email;
-      updateUserProfile(user);
-      loadUserData(user.uid);
-      loadUserPosts(user.uid);
-      loadUserCertificates(user.uid);
-    }
+async function handleSignOut() {
+  try {
+    await auth.signOut();
+    console.log("User signed out successfully");
+    showToast('You have been signed out successfully');
+    currentUser = null;
+  } catch (error) {
+    console.error('Sign out error:', error);
+    showToast('Error signing out: ' + error.message, true);
+  }
+}
 
-    function handleSignedOutUser() {
-      console.log("Handling signed out user");
-      loginBtn?.classList?.remove('d-none');
-      logoutBtn?.classList?.add('d-none');
-      if (userEmail) userEmail.textContent = '';
-      if (userName) userName.textContent = 'Guest User';
-      if (userTitle) userTitle.textContent = 'Member';
-      if (userBio) userBio.textContent = 'Please sign in to view your profile.';
-      if (userEducation) userEducation.textContent = 'Not available';
-      if (userLocation) userLocation.textContent = 'Unknown';
-      if (userEmailDisplay) userEmailDisplay.textContent = 'Not signed in';
-      if (profileImage) profileImage.src = 'https://via.placeholder.com/150';
-      if (coverImage) coverImage.src = 'https://via.placeholder.com/1200x400';
-      if (postCount) postCount.textContent = '0';
-      if (followerCount) followerCount.textContent = '0';
-      if (followingCount) followingCount.textContent = '0';
-      
-      // Clear posts and certificates
-      if (recentPosts) recentPosts.innerHTML = '';
-      if (allPosts) allPosts.innerHTML = '';
-      if (certificatesList) certificatesList.innerHTML = '';
-      if (allCertificates) allCertificates.innerHTML = '';
-      
-      // Clear feed
-      if (feedPosts) {
-        feedPosts.innerHTML = `
-          <div class="text-center py-5">
-            <i class="fas fa-user-lock fa-4x text-muted mb-3"></i>
-            <h5>Please Sign In</h5>
-            <p>Sign in to view your feed and connect with others.</p>
-            <button class="btn btn-primary" id="feedLoginBtn">Sign In</button>
-          </div>
-        `;
-        document.getElementById('feedLoginBtn')?.addEventListener('click', showLoginModal);
-      }
-    }
+function handleSignedInUser(user) {
+  console.log("Handling signed in user:", user.uid);
+  document.getElementById('firebaseui-auth-container').style.display = 'none';
+  ui.reset();
+  
+  loginBtn?.classList?.add('d-none');
+  logoutBtn?.classList?.remove('d-none');
+  if (userEmail) userEmail.textContent = user.email;
+  updateUserProfile(user);
+  loadUserData(user.uid);
+  loadUserPosts(user.uid);
+  loadUserCertificates(user.uid);
+}
 
-    function updateUserProfile(user) {
-      if (!user) return;
-      
-      if (userName) userName.textContent = user.displayName || 'User';
-      if (userEmailDisplay) userEmailDisplay.textContent = user.email;
-      if (user.photoURL && profileImage) profileImage.src = user.photoURL;
-    }
+function handleSignedOutUser() {
+  console.log("Handling signed out user");
+  loginBtn?.classList?.remove('d-none');
+  logoutBtn?.classList?.add('d-none');
+  if (userEmail) userEmail.textContent = '';
+  if (userName) userName.textContent = 'Guest User';
+  if (userTitle) userTitle.textContent = 'Member';
+  if (userBio) userBio.textContent = 'Please sign in to view your profile.';
+  if (userEducation) userEducation.textContent = 'Not available';
+  if (userLocation) userLocation.textContent = 'Unknown';
+  if (userEmailDisplay) userEmailDisplay.textContent = 'Not signed in';
+  if (profileImage) profileImage.src = 'https://via.placeholder.com/150';
+  if (coverImage) coverImage.src = 'https://via.placeholder.com/1200x400';
+  if (postCount) postCount.textContent = '0';
+  if (followerCount) followerCount.textContent = '0';
+  if (followingCount) followingCount.textContent = '0';
+  
+  if (recentPosts) recentPosts.innerHTML = '';
+  if (allPosts) allPosts.innerHTML = '';
+  if (certificatesList) certificatesList.innerHTML = '';
+  if (allCertificates) allCertificates.innerHTML = '';
+  
+  if (feedPosts) {
+    feedPosts.innerHTML = `
+      <div class="text-center py-5">
+        <i class="fas fa-user-lock fa-4x text-muted mb-3"></i>
+        <h5>Please Sign In</h5>
+        <p>Sign in to view your feed and connect with others.</p>
+        <button class="btn btn-primary" id="feedLoginBtn">Sign In</button>
+      </div>
+    `;
+    document.getElementById('feedLoginBtn')?.addEventListener('click', showLoginModal);
+  }
+}
 
-    function loadUserData(userId) {
-      if (!userId) return;
-      
-      database.ref('users/' + userId).on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          if (userName) userName.textContent = data.name || 'User';
-          if (userTitle) userTitle.textContent = data.title || 'Member';
-          if (userBio) userBio.textContent = data.bio || 'No bio yet.';
-          if (userEducation) userEducation.textContent = data.education || 'Not specified';
-          if (userLocation) userLocation.textContent = data.location || 'Unknown';
-          if (postCount) postCount.textContent = data.postCount || '0';
-          if (followerCount) followerCount.textContent = data.followerCount || '0';
-          if (followingCount) followingCount.textContent = data.followingCount || '0';
-          if (data.profileImage && profileImage) profileImage.src = data.profileImage;
-          if (data.coverImage && coverImage) coverImage.src = data.coverImage;
-          if (editName) editName.value = data.name || '';
-          if (editTitle) editTitle.value = data.title || '';
-          if (editBio) editBio.value = data.bio || '';
-          if (editEducation) editEducation.value = data.education || '';
-          if (editLocation) editLocation.value = data.location || '';
-        } else {
-          createDefaultUserData(userId);
-        }
-      }, (error) => {
-        console.error('Database read failed:', error);
-        showToast('Error loading profile data', true);
-      });
-    }
+function updateUserProfile(user) {
+  if (!user) return;
+  
+  if (userName) userName.textContent = user.displayName || 'User';
+  if (userEmailDisplay) userEmailDisplay.textContent = user.email;
+  if (user.photoURL && profileImage) profileImage.src = user.photoURL;
+}
 
-    async function createDefaultUserData(userId) {
-      try {
-        const user = auth.currentUser;
-        const defaultData = {
-          name: user?.displayName || 'User',
-          email: user?.email || '',
-          title: 'Member',
-          bio: 'No bio yet.',
-          education: 'Not specified',
-          location: 'Unknown',
-          postCount: 0,
-          followerCount: 0,
-          followingCount: 0,
-          profileImage: user?.photoURL || 'https://via.placeholder.com/150',
-          coverImage: 'https://via.placeholder.com/1200x400',
-          createdAt: new Date().toISOString()
-        };
-        
-        await database.ref('users/' + userId).set(defaultData);
-        showToast('Profile created successfully!');
-      } catch (error) {
-        console.error('Error setting default data:', error);
-        showToast('Error creating profile', true);
-      }
+function loadUserData(userId) {
+  if (!userId) return;
+  
+  database.ref('users/' + userId).on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      if (userName) userName.textContent = data.name || 'User';
+      if (userTitle) userTitle.textContent = data.title || 'Member';
+      if (userBio) userBio.textContent = data.bio || 'No bio yet.';
+      if (userEducation) userEducation.textContent = data.education || 'Not specified';
+      if (userLocation) userLocation.textContent = data.location || 'Unknown';
+      if (postCount) postCount.textContent = data.postCount || '0';
+      if (followerCount) followerCount.textContent = data.followerCount || '0';
+      if (followingCount) followingCount.textContent = data.followingCount || '0';
+      if (data.profileImage && profileImage) profileImage.src = data.profileImage;
+      if (data.coverImage && coverImage) coverImage.src = data.coverImage;
+      if (editName) editName.value = data.name || '';
+      if (editTitle) editTitle.value = data.title || '';
+      if (editBio) editBio.value = data.bio || '';
+      if (editEducation) editEducation.value = data.education || '';
+      if (editLocation) editLocation.value = data.location || '';
+    } else {
+      createDefaultUserData(userId);
     }
+  }, (error) => {
+    console.error('Database read failed:', error);
+    showToast('Error loading profile data', true);
+  });
+}
 
-    async function uploadProfileImage(e) {
-      const isAuthenticated = await verifyAuth();
-      if (!isAuthenticated) return;
-      
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      try {
-        const userId = currentUser.uid;
-        const fileExtension = file.name.split('.').pop();
-        const imageRef = storage.ref(`users/${userId}/profile/profile.${fileExtension}`);
-        
-        // Show loading state
-        if (profileImage) profileImage.src = 'https://via.placeholder.com/150?text=Uploading...';
-        
-        const snapshot = await imageRef.put(file);
-        const url = await snapshot.ref.getDownloadURL();
-        
-        if (profileImage) profileImage.src = url;
-        await database.ref(`users/${userId}`).update({ profileImage: url });
-        
-        // Update auth profile
-        await currentUser.updateProfile({
-          photoURL: url
-        });
-        
-        // Reset file input
-        e.target.value = '';
-        
-        showToast('Profile picture updated!');
-      } catch (err) {
-        console.error('Upload error:', err);
-        showToast('Error uploading profile image', true);
-        if (profileImage) profileImage.src = 'https://via.placeholder.com/150';
-      }
-    }
-
-    async function uploadCoverImage(e) {
-      const isAuthenticated = await verifyAuth();
-      if (!isAuthenticated) return;
-      
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      try {
-        const userId = currentUser.uid;
-        const fileExtension = file.name.split('.').pop();
-        const imageRef = storage.ref(`users/${userId}/cover/cover.${fileExtension}`);
-        
-        // Show loading state
-        if (coverImage) coverImage.src = 'https://via.placeholder.com/1200x400?text=Uploading...';
-        
-        const snapshot = await imageRef.put(file);
-        const url = await snapshot.ref.getDownloadURL();
-        
-        if (coverImage) coverImage.src = url;
-        await database.ref(`users/${userId}`).update({ coverImage: url });
-        
-        // Reset file input
-        e.target.value = '';
-        
-        showToast('Cover photo updated!');
-      } catch (err) {
-        console.error('Upload error:', err);
-        showToast('Error uploading cover image', true);
-        if (coverImage) coverImage.src = 'https://via.placeholder.com/1200x400';
-      }
-    }
-
-    async function saveProfileChanges() {
-      const isAuthenticated = await verifyAuth();
-      if (!isAuthenticated) return;
-      
-      try {
-        const userId = currentUser.uid;
-        const updates = {
-          name: editName?.value || '',
-          title: editTitle?.value || '',
-          bio: editBio?.value || '',
-          education: editEducation?.value || '',
-          location: editLocation?.value || '',
-          updatedAt: new Date().toISOString()
-        };
-        
-        await database.ref(`users/${userId}`).update(updates);
-        
-        // Update auth profile name if changed
-        if (updates.name && updates.name !== currentUser.displayName) {
-          await currentUser.updateProfile({
-            displayName: updates.name
-          });
-        }
-        
-        // Close the modal
-        const modalElement = document.getElementById('editProfileModal');
-        if (modalElement) {
-          const modal = bootstrap.Modal.getInstance(modalElement);
-          if (modal) modal.hide();
-        }
-        
-        showToast('Profile updated successfully!');
-      } catch (error) {
-        console.error('Profile update error:', error);
-        showToast('Error updating profile', true);
-      }
-    }
+async function createDefaultUserData(userId) {
+  try {
+    const user = auth.currentUser;
+    const defaultData = {
+      name: user?.displayName || 'User',
+      email: user?.email || '',
+      title: 'Member',
+      bio: 'No bio yet.',
+      education: 'Not specified',
+      location: 'Unknown',
+      postCount: 0,
+      followerCount: 0,
+      followingCount: 0,
+      profileImage: user?.photoURL || 'https://via.placeholder.com/150',
+      coverImage: 'https://via.placeholder.com/1200x400',
+      createdAt: new Date().toISOString()
+    };
     
-    function handlePostImageSelect(e) {
-      const file = e.target.files[0];
-      if (file) {
-        if (imageName) imageName.textContent = file.name;
-      }
-    }
+    await database.ref('users/' + userId).set(defaultData);
+    showToast('Profile created successfully!');
+  } catch (error) {
+    console.error('Error setting default data:', error);
+    showToast('Error creating profile', true);
+  }
+}
+
+async function uploadProfileImage(e) {
+  const isAuthenticated = await verifyAuth();
+  if (!isAuthenticated) return;
+  
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  try {
+    const userId = currentUser.uid;
+    const fileExtension = file.name.split('.').pop();
+    const imageRef = storage.ref(`users/${userId}/profile/profile.${fileExtension}`);
     
-    async function createPost() {
-      const isAuthenticated = await verifyAuth();
-      if (!isAuthenticated) return;
-      
-      const content = postContent?.value?.trim();
-      const imageFile = postImageUpload?.files[0];
-      
-      if (!content && !imageFile) {
-        showToast('Please add some content or an image to your post', true);
-        return;
-      }
-      
-      try {
-        const userId = currentUser.uid;
-        const postData = {
-          content: content || '',
-          authorId: userId,
-          authorName: currentUser.displayName || 'User',
-          authorPhoto: currentUser.photoURL || 'https://via.placeholder.com/150',
-          createdAt: new Date().toISOString(),
-          likes: {},
-          comments: 0
-        };
-        
-        // Show loading state
-        postUpdateBtn.disabled = true;
-        postUpdateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Posting...';
-        
-        // Upload image if exists
-        if (imageFile) {
-          const fileExtension = imageFile.name.split('.').pop();
-          const imageRef = storage.ref(`posts/${userId}/${Date.now()}.${fileExtension}`);
-          const snapshot = await imageRef.put(imageFile);
-          const url = await snapshot.ref.getDownloadURL();
-          postData.imageUrl = url;
-        }
-        
-        // Add post to database
-        const newPostRef = database.ref('posts').push();
-        await newPostRef.set(postData);
-        
-        // Update user's post count
-        const userRef = database.ref(`users/${userId}`);
-        const userSnapshot = await userRef.once('value');
-        const currentCount = userSnapshot.val()?.postCount || 0;
-        await userRef.update({ postCount: currentCount + 1 });
-        
-        // Reset form
-        postContent.value = '';
-        postImageUpload.value = '';
-        if (imageName) imageName.textContent = '';
-        postUpdateBtn.disabled = false;
-        postUpdateBtn.textContent = 'Post Update';
-        
-        showToast('Post created successfully!');
-      } catch (error) {
-        console.error('Error creating post:', error);
-        showToast('Error creating post', true);
-        postUpdateBtn.disabled = false;
-        postUpdateBtn.textContent = 'Post Update';
-      }
-    }
+    if (profileImage) profileImage.src = 'https://via.placeholder.com/150?text=Uploading...';
     
-    function loadUserPosts(userId) {
-      if (!userId) return;
-      
-      database.ref('posts').orderByChild('authorId').equalTo(userId).on('value', (snapshot) => {
-        const posts = [];
-        snapshot.forEach((childSnapshot) => {
-          const post = childSnapshot.val();
-          post.id = childSnapshot.key;
-          posts.unshift(post); // Newest first
-        });
-        
-        // Update recent posts (show 3)
-        if (recentPosts) {
-          recentPosts.innerHTML = '';
-          posts.slice(0, 3).forEach(post => {
-            recentPosts.appendChild(createPostElement(post, true));
-          });
-        }
-        
-        // Update all posts
-        if (allPosts) {
-          allPosts.innerHTML = '';
-          posts.forEach(post => {
-            allPosts.appendChild(createPostElement(post, false));
-          });
-        }
-        
-        // Update post count
-        if (postCount) postCount.textContent = posts.length;
-      }, (error) => {
-        console.error('Error loading posts:', error);
-        showToast('Error loading posts', true);
-      });
-    }
+    const snapshot = await imageRef.put(file);
+    const url = await snapshot.ref.getDownloadURL();
     
-    function createPostElement(post, isSmall) {
-      const col = document.createElement('div');
-      col.className = isSmall ? 'col-4' : 'col-md-6 col-lg-4 mb-3';
-      
-      const card = document.createElement('div');
-      card.className = 'card h-100';
-      
-      let imageHtml = '';
-      if (post.imageUrl) {
-        imageHtml = `
-          <img src="${post.imageUrl}" class="card-img-top post-image" alt="Post image" 
-               style="height: ${isSmall ? '100px' : '200px'}; object-fit: cover;">
-        `;
-      }
-      
-      const date = new Date(post.createdAt).toLocaleDateString();
-      const content = post.content ? `<p class="card-text">${post.content}</p>` : '';
-      
-      card.innerHTML = `
-        ${imageHtml}
-        <div class="card-body">
-          ${content}
-        </div>
-        <div class="card-footer bg-transparent">
-          <small class="text-muted">Posted on ${date}</small>
-        </div>
-      `;
-      
-      col.appendChild(card);
-      return col;
-    }
+    if (profileImage) profileImage.src = url;
+    await database.ref(`users/${userId}`).update({ profileImage: url });
     
-    async function uploadCertificate(e) {
-      const isAuthenticated = await verifyAuth();
-      if (!isAuthenticated) return;
-      
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      try {
-        const userId = currentUser.uid;
-        const fileExtension = file.name.split('.').pop();
-        const certificateRef = storage.ref(`certificates/${userId}/${Date.now()}.${fileExtension}`);
-        
-        // Show loading state
-        addCertificateBtn.disabled = true;
-        addCertificateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
-        
-        // Upload file
-        const snapshot = await certificateRef.put(file);
-        const url = await snapshot.ref.getDownloadURL();
-        
-        // Add certificate to database
-        const certificateData = {
-          name: file.name,
-          url: url,
-          userId: userId,
-          uploadedAt: new Date().toISOString()
-        };
-        
-        const newCertificateRef = database.ref('certificates').push();
-        await newCertificateRef.set(certificateData);
-        
-        showToast('Certificate uploaded successfully!');
-        
-        // Reset file input
-        e.target.value = '';
-        addCertificateBtn.disabled = false;
-        addCertificateBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add Certificate';
-      } catch (error) {
-        console.error('Error uploading certificate:', error);
-        showToast('Error uploading certificate', true);
-        addCertificateBtn.disabled = false;
-        addCertificateBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add Certificate';
-      }
-    }
-    
-    function loadUserCertificates(userId) {
-      if (!userId) return;
-      
-      database.ref('certificates').orderByChild('userId').equalTo(userId).on('value', (snapshot) => {
-        const certificates = [];
-        snapshot.forEach((childSnapshot) => {
-          const cert = childSnapshot.val();
-          cert.id = childSnapshot.key;
-          certificates.unshift(cert); // Newest first
-        });
-        
-        // Update certificates in profile tab (show 3)
-        if (certificatesList) {
-          certificatesList.innerHTML = '';
-          certificates.slice(0, 3).forEach(cert => {
-            certificatesList.appendChild(createCertificateElement(cert, true));
-          });
-        }
-        
-        // Update all certificates
-        if (allCertificates) {
-          allCertificates.innerHTML = '';
-          certificates.forEach(cert => {
-            allCertificates.appendChild(createCertificateElement(cert, false));
-          });
-        }
-      }, (error) => {
-        console.error('Error loading certificates:', error);
-        showToast('Error loading certificates', true);
-      });
-    }
-    
-    function createCertificateElement(cert, isSmall) {
-      const col = document.createElement('div');
-      col.className = isSmall ? 'col-4' : 'col-md-6 col-lg-4 mb-3';
-      
-      const card = document.createElement('div');
-      card.className = 'card h-100 certificate-card';
-      
-      const date = new Date(cert.uploadedAt).toLocaleDateString();
-      const fileName = cert.name.length > 20 ? cert.name.substring(0, 17) + '...' : cert.name;
-      
-      card.innerHTML = `
-        <div class="card-body text-center">
-          <i class="fas fa-certificate fa-3x text-warning mb-3"></i>
-          <h6 class="card-title">${fileName}</h6>
-          <small class="text-muted">Uploaded on ${date}</small>
-        </div>
-        <div class="card-footer bg-transparent">
-          <a href="${cert.url}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
-            <i class="fas fa-eye me-1"></i> View
-          </a>
-        </div>
-      `;
-      
-      col.appendChild(card);
-      return col;
-    }
-
-    function showFeed() {
-      document.querySelector('.container').classList.remove('d-none');
-      loadFeedPosts();
-    }
-
-    function loadStories() {
-      if (!currentUser) return;
-      
-      // Clear existing stories (except "Your Story")
-      while (storiesContainer.children.length > 1) {
-        storiesContainer.removeChild(storiesContainer.lastChild);
-      }
-
-      // Load stories from database
-      database.ref('users').limitToFirst(10).once('value', snapshot => {
-        const users = snapshot.val();
-        if (users) {
-          Object.keys(users).forEach(userId => {
-            if (userId !== currentUser.uid) {
-              const user = users[userId];
-              const storyItem = document.createElement('div');
-              storyItem.className = 'story-item';
-              storyItem.innerHTML = `
-                <div class="story-circle">
-                  <div class="story-inner">
-                    <img src="${user.profileImage || 'https://via.placeholder.com/64'}" class="img-fluid" alt="Story">
-                  </div>
-                </div>
-                <div class="story-username">${user.name || 'User'}</div>
-              `;
-              storiesContainer.appendChild(storyItem);
-            }
-          });
-        }
-      }, error => {
-        console.error('Error loading stories:', error);
-      });
-    }
-
-    function loadSuggestions() {
-      if (!currentUser) return;
-      
-      suggestionsList.innerHTML = '';
-
-      // Load suggestions from database
-      database.ref('users').limitToLast(5).once('value', snapshot => {
-        const users = snapshot.val();
-        if (users) {
-          Object.keys(users).forEach(userId => {
-            if (userId !== currentUser.uid) {
-              const user = users[userId];
-              const suggestionItem = document.createElement('div');
-              suggestionItem.className = 'suggestion-item d-flex justify-content-between align-items-center';
-              suggestionItem.innerHTML = `
-                <div class="d-flex align-items-center">
-                  <img src="${user.profileImage || 'https://via.placeholder.com/32'}" 
-                       class="rounded-circle me-3" width="32" height="32">
-                  <div>
-                    <div class="fw-bold">${user.name || 'User'}</div>
-                    <small class="text-muted">Suggested for you</small>
-                  </div>
-                </div>
-                <a href="#" class="text-primary">Follow</a>
-              `;
-              suggestionsList.appendChild(suggestionItem);
-            }
-          });
-        }
-      }, error => {
-        console.error('Error loading suggestions:', error);
-      });
-    }
-
-    function loadFeedPosts() {
-      if (!currentUser) return;
-      
-      feedPosts.innerHTML = '<div class="spinner-container"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
-
-      // Load posts from database
-      database.ref('posts').orderByChild('createdAt').limitToLast(20).once('value', snapshot => {
-        const posts = snapshot.val();
-        if (posts) {
-          feedPosts.innerHTML = '';
-          
-          // Convert to array and reverse to show newest first
-          const postsArray = Object.keys(posts).map(postId => ({ ...posts[postId], id: postId }));
-          postsArray.reverse().forEach(post => {
-            const postElement = createFeedPostElement(post);
-            feedPosts.appendChild(postElement);
-          });
-        } else {
-          feedPosts.innerHTML = `
-            <div class="text-center py-5">
-              <i class="fas fa-camera fa-4x text-muted mb-3"></i>
-              <h5>No Posts Yet</h5>
-              <p>When you follow people, you'll see their photos here.</p>
-            </div>
-          `;
-        }
-      }, error => {
-        console.error('Error loading feed:', error);
-        feedPosts.innerHTML = `
-          <div class="text-center py-5">
-            <i class="fas fa-exclamation-triangle fa-4x text-danger mb-3"></i>
-            <h5>Error Loading Feed</h5>
-            <p>There was a problem loading the feed. Please try again later.</p>
-          </div>
-        `;
-      });
-    }
-
-    function createFeedPostElement(post) {
-      const postElement = document.createElement('div');
-      postElement.className = 'post-card mb-4';
-      
-      const date = new Date(post.createdAt).toLocaleString();
-      
-      // Check if current user has liked this post
-      const liked = currentUser && post.likes && post.likes[currentUser.uid];
-      
-      postElement.innerHTML = `
-        <div class="post-header d-flex align-items-center">
-          <img src="${post.authorPhoto || 'https://via.placeholder.com/32'}" 
-               class="rounded-circle me-3" width="32" height="32">
-          <strong>${post.authorName}</strong>
-        </div>
-        ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Post">` : ''}
-        <div class="post-actions d-flex">
-          <button class="btn btn-link text-dark me-2 like-btn" data-postid="${post.id}">
-            <i class="${liked ? 'fas' : 'far'} fa-heart fa-lg ${liked ? 'text-danger' : ''}"></i>
-          </button>
-          <button class="btn btn-link text-dark me-2">
-            <i class="far fa-comment fa-lg"></i>
-          </button>
-          <button class="btn btn-link text-dark">
-            <i class="far fa-paper-plane fa-lg"></i>
-          </button>
-          <button class="btn btn-link text-dark ms-auto">
-            <i class="far fa-bookmark fa-lg"></i>
-          </button>
-        </div>
-        <div class="post-likes">
-          ${post.likes ? Object.keys(post.likes).length : 0} likes
-        </div>
-        <div class="post-caption">
-          <strong>${post.authorName}</strong> ${post.content || ''}
-        </div>
-        <div class="post-comments">
-          View all ${post.comments || 0} comments
-        </div>
-        <div class="post-time">
-          ${date}
-        </div>
-      `;
-      
-      // Add like button functionality
-      const likeBtn = postElement.querySelector('.like-btn');
-      likeBtn.addEventListener('click', () => toggleLike(post.id));
-      
-      return postElement;
-    }
-
-    async function toggleLike(postId) {
-      if (!currentUser) {
-        showLoginModal();
-        return;
-      }
-      
-      try {
-        const likeRef = database.ref(`posts/${postId}/likes/${currentUser.uid}`);
-        const snapshot = await likeRef.once('value');
-        
-        if (snapshot.exists()) {
-          // Unlike
-          await likeRef.remove();
-        } else {
-          // Like
-          await likeRef.set(true);
-        }
-      } catch (error) {
-        console.error('Error toggling like:', error);
-        showToast('Error liking post', true);
-      }
-    }
-
-    function searchUsers() {
-      const searchTerm = searchInput.value.trim().toLowerCase();
-      if (!searchTerm) {
-        searchResults.innerHTML = '';
-        return;
-      }
-
-      database.ref('users').once('value', snapshot => {
-        const users = snapshot.val();
-        searchResults.innerHTML = '';
-        
-        if (users) {
-          Object.keys(users).forEach(userId => {
-            const user = users[userId];
-            const userName = user.name?.toLowerCase() || '';
-            const userEmail = user.email?.toLowerCase() || '';
-            
-            if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
-              const isCurrentUser = userId === currentUser?.uid;
-              const userElement = document.createElement('div');
-              userElement.className = 'd-flex align-items-center mb-3';
-              userElement.innerHTML = `
-                <img src="${user.profileImage || 'https://via.placeholder.com/44'}" 
-                     class="rounded-circle me-3" width="44" height="44">
-                <div>
-                  <div class="fw-bold">${user.name || 'User'}</div>
-                  <small class="text-muted">${user.email || ''}</small>
-                </div>
-                ${!isCurrentUser ? `<a href="#" class="btn btn-primary btn-sm ms-auto follow-btn" data-userid="${userId}">Follow</a>` : ''}
-              `;
-              searchResults.appendChild(userElement);
-              
-              // Add follow button event if not current user
-              if (!isCurrentUser) {
-                const followBtn = userElement.querySelector('.follow-btn');
-                followBtn.addEventListener('click', (e) => {
-                  e.preventDefault();
-                  followUser(userId);
-                });
-              }
-            }
-          });
-          
-          if (searchResults.children.length === 0) {
-            searchResults.innerHTML = '<div class="text-muted">No users found</div>';
-          }
-        }
-      }, error => {
-        console.error('Error searching users:', error);
-        searchResults.innerHTML = '<div class="text-danger">Error searching users</div>';
-      });
-    }
-
-    async function followUser(userId) {
-      if (!currentUser) {
-        showLoginModal();
-        return;
-      }
-      
-      try {
-        const followRef = database.ref(`following/${currentUser.uid}/${userId}`);
-        const snapshot = await followRef.once('value');
-        
-        if (snapshot.exists()) {
-          // Already following, so unfollow
-          await followRef.remove();
-          // Also remove from the other user's followers
-          await database.ref(`followers/${userId}/${currentUser.uid}`).remove();
-          showToast('You have unfollowed this user');
-        } else {
-          // Follow
-          await followRef.set(true);
-          // Also add to the other user's followers
-          await database.ref(`followers/${userId}/${currentUser.uid}`).set(true);
-          showToast('You are now following this user');
-        }
-        
-        // Update UI
-        const followBtn = document.querySelector(`.follow-btn[data-userid="${userId}"]`);
-        if (followBtn) {
-          followBtn.textContent = snapshot.exists() ? 'Follow' : 'Following';
-          followBtn.classList.toggle('btn-primary');
-          followBtn.classList.toggle('btn-secondary');
-        }
-      } catch (error) {
-        console.error('Error following user:', error);
-        showToast('Error following user', true);
-      }
-    }
-
-    function handleImageSelect(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          postPreviewImage.src = event.target.result;
-          postPreview.classList.remove('d-none');
-          uploadSection.classList.add('d-none');
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    async function sharePost() {
-      if (!currentUser) {
-        showLoginModal();
-        return;
-      }
-      
-      if (!postImageInput.files[0]) {
-        showToast('Please select an image to post', true);
-        return;
-      }
-      
-      const file = postImageInput.files[0];
-      const fileExtension = file.name.split('.').pop();
-      const storageRef = storage.ref(`posts/${currentUser.uid}/${Date.now()}.${fileExtension}`);
-      
-      // Show loading state
-      sharePostBtn.disabled = true;
-      sharePostBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sharing...';
-      
-      try {
-        // Upload image
-        const snapshot = await storageRef.put(file);
-        const url = await snapshot.ref.getDownloadURL();
-        
-        // Create post in database
-        const postData = {
-          authorId: currentUser.uid,
-          authorName: currentUser.displayName || 'User',
-          authorPhoto: currentUser.photoURL || 'https://via.placeholder.com/150',
-          imageUrl: url,
-          content: postCaption.value.trim(),
-          likes: {},
-          comments: 0,
-          createdAt: new Date().toISOString()
-        };
-        
-        const newPostRef = await database.ref('posts').push(postData);
-        
-        // Update user's post count
-        const userRef = database.ref(`users/${currentUser.uid}`);
-        const userSnapshot = await userRef.once('value');
-        const currentCount = userSnapshot.val()?.postCount || 0;
-        await userRef.update({ postCount: currentCount + 1 });
-        
-        // Reset form
-        postImageInput.value = '';
-        postCaption.value = '';
-        postPreview.classList.add('d-none');
-        uploadSection.classList.remove('d-none');
-        sharePostBtn.disabled = false;
-        sharePostBtn.textContent = 'Share';
-        
-        // Close modal
-        const modalElement = document.getElementById('createPostModal');
-        const modal = bootstrap.Modal.getInstance(modalElement);
-        modal.hide();
-        
-        showToast('Post shared successfully!');
-      } catch (error) {
-        console.error('Error sharing post:', error);
-        showToast('Error sharing post', true);
-        sharePostBtn.disabled = false;
-        sharePostBtn.textContent = 'Share';
-      }
-    }
-
-    // Initialize the app
-    document.addEventListener('DOMContentLoaded', () => {
-      // Set up real-time listeners for likes
-      database.ref('posts').on('child_changed', snapshot => {
-        const post = snapshot.val();
-        const postId = snapshot.key;
-        
-        // Update like count
-        const likesElement = document.querySelector(`[data-postid="${postId}"] .post-likes`);
-        if (likesElement) {
-          const likeCount = post.likes ? Object.keys(post.likes).length : 0;
-          likesElement.textContent = `${likeCount} likes`;
-        }
-        
-        // Update like button if current user
-        if (currentUser) {
-          const likeBtn = document.querySelector(`[data-postid="${postId}"] .like-btn i`);
-          if (likeBtn) {
-            const liked = post.likes && post.likes[currentUser.uid];
-            likeBtn.className = `${liked ? 'fas' : 'far'} fa-heart fa-lg ${liked ? 'text-danger' : ''}`;
-          }
-        }
-      });
-      
-      // Set up real-time feed updates
-      database.ref('posts').orderByChild('createdAt').limitToLast(1).on('child_added', snapshot => {
-        const post = snapshot.val();
-        post.id = snapshot.key;
-        
-        // Only add if not already in feed
-        if (!document.querySelector(`[data-postid="${post.id}"]`)) {
-          const postElement = createFeedPostElement(post);
-          if (feedPosts.firstChild?.classList?.contains('spinner-container')) {
-            feedPosts.innerHTML = '';
-          }
-          feedPosts.insertBefore(postElement, feedPosts.firstChild);
-        }
-      });
+    await currentUser.updateProfile({
+      photoURL: url
     });
+    
+    e.target.value = '';
+    showToast('Profile picture updated!');
+  } catch (err) {
+    console.error('Upload error:', err);
+    showToast('Error uploading profile image', true);
+    if (profileImage) profileImage.src = 'https://via.placeholder.com/150';
+  }
+}
+
+async function uploadCoverImage(e) {
+  const isAuthenticated = await verifyAuth();
+  if (!isAuthenticated) return;
+  
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  try {
+    const userId = currentUser.uid;
+    const fileExtension = file.name.split('.').pop();
+    const imageRef = storage.ref(`users/${userId}/cover/cover.${fileExtension}`);
+    
+    if (coverImage) coverImage.src = 'https://via.placeholder.com/1200x400?text=Uploading...';
+    
+    const snapshot = await imageRef.put(file);
+    const url = await snapshot.ref.getDownloadURL();
+    
+    if (coverImage) coverImage.src = url;
+    await database.ref(`users/${userId}`).update({ coverImage: url });
+    
+    e.target.value = '';
+    showToast('Cover photo updated!');
+  } catch (err) {
+    console.error('Upload error:', err);
+    showToast('Error uploading cover image', true);
+    if (coverImage) coverImage.src = 'https://via.placeholder.com/1200x400';
+  }
+}
+
+async function saveProfileChanges() {
+  const isAuthenticated = await verifyAuth();
+  if (!isAuthenticated) return;
+  
+  try {
+    const userId = currentUser.uid;
+    const updates = {
+      name: editName?.value || '',
+      title: editTitle?.value || '',
+      bio: editBio?.value || '',
+      education: editEducation?.value || '',
+      location: editLocation?.value || '',
+      updatedAt: new Date().toISOString()
+    };
+    
+    await database.ref(`users/${userId}`).update(updates);
+    
+    if (updates.name && updates.name !== currentUser.displayName) {
+      await currentUser.updateProfile({
+        displayName: updates.name
+      });
+    }
+    
+    const modalElement = document.getElementById('editProfileModal');
+    if (modalElement) {
+      const modal = bootstrap.Modal.getInstance(modalElement);
+      if (modal) modal.hide();
+    }
+    
+    showToast('Profile updated successfully!');
+  } catch (error) {
+    console.error('Profile update error:', error);
+    showToast('Error updating profile', true);
+  }
+}
+
+function handlePostImageSelect(e) {
+  const file = e.target.files[0];
+  if (file) {
+    if (imageName) imageName.textContent = file.name;
+  }
+}
+
+async function createPost() {
+  const isAuthenticated = await verifyAuth();
+  if (!isAuthenticated) return;
+  
+  const content = postContent?.value?.trim();
+  const imageFile = postImageUpload?.files[0];
+  
+  if (!content && !imageFile) {
+    showToast('Please add some content or an image to your post', true);
+    return;
+  }
+  
+  try {
+    const userId = currentUser.uid;
+    const postData = {
+      content: content || '',
+      authorId: userId,
+      authorName: currentUser.displayName || 'User',
+      authorPhoto: currentUser.photoURL || 'https://via.placeholder.com/150',
+      createdAt: new Date().toISOString(),
+      likes: {},
+      comments: 0
+    };
+    
+    postUpdateBtn.disabled = true;
+    postUpdateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Posting...';
+    
+    if (imageFile) {
+      const fileExtension = imageFile.name.split('.').pop();
+      const imageRef = storage.ref(`posts/${userId}/${Date.now()}.${fileExtension}`);
+      const snapshot = await imageRef.put(imageFile);
+      const url = await snapshot.ref.getDownloadURL();
+      postData.imageUrl = url;
+    }
+    
+    const newPostRef = database.ref('posts').push();
+    await newPostRef.set(postData);
+    
+    const userRef = database.ref(`users/${userId}`);
+    const userSnapshot = await userRef.once('value');
+    const currentCount = userSnapshot.val()?.postCount || 0;
+    await userRef.update({ postCount: currentCount + 1 });
+    
+    postContent.value = '';
+    postImageUpload.value = '';
+    if (imageName) imageName.textContent = '';
+    postUpdateBtn.disabled = false;
+    postUpdateBtn.textContent = 'Post Update';
+    
+    showToast('Post created successfully!');
+  } catch (error) {
+    console.error('Error creating post:', error);
+    showToast('Error creating post', true);
+    postUpdateBtn.disabled = false;
+    postUpdateBtn.textContent = 'Post Update';
+  }
+}
+
+function loadUserPosts(userId) {
+  if (!userId) return;
+  
+  database.ref('posts').orderByChild('authorId').equalTo(userId).on('value', (snapshot) => {
+    const posts = [];
+    snapshot.forEach((childSnapshot) => {
+      const post = childSnapshot.val();
+      post.id = childSnapshot.key;
+      posts.unshift(post);
+    });
+    
+    if (recentPosts) {
+      recentPosts.innerHTML = '';
+      posts.slice(0, 3).forEach(post => {
+        recentPosts.appendChild(createPostElement(post, true));
+      });
+    }
+    
+    if (allPosts) {
+      allPosts.innerHTML = '';
+      posts.forEach(post => {
+        allPosts.appendChild(createPostElement(post, false));
+      });
+    }
+    
+    if (postCount) postCount.textContent = posts.length;
+  }, (error) => {
+    console.error('Error loading posts:', error);
+    showToast('Error loading posts', true);
+  });
+}
+
+function createPostElement(post, isSmall) {
+  const col = document.createElement('div');
+  col.className = isSmall ? 'col-4' : 'col-md-6 col-lg-4 mb-3';
+  
+  const card = document.createElement('div');
+  card.className = 'card h-100';
+  
+  let imageHtml = '';
+  if (post.imageUrl) {
+    imageHtml = `
+      <img src="${post.imageUrl}" class="card-img-top post-image" alt="Post image" 
+           style="height: ${isSmall ? '100px' : '200px'}; object-fit: cover;">
+    `;
+  }
+  
+  const date = new Date(post.createdAt).toLocaleDateString();
+  const content = post.content ? `<p class="card-text">${post.content}</p>` : '';
+  
+  card.innerHTML = `
+    ${imageHtml}
+    <div class="card-body">
+      ${content}
+    </div>
+    <div class="card-footer bg-transparent">
+      <small class="text-muted">Posted on ${date}</small>
+    </div>
+  `;
+  
+  col.appendChild(card);
+  return col;
+}
+
+async function uploadCertificate(e) {
+  const isAuthenticated = await verifyAuth();
+  if (!isAuthenticated) return;
+  
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  try {
+    const userId = currentUser.uid;
+    const fileExtension = file.name.split('.').pop();
+    const certificateRef = storage.ref(`certificates/${userId}/${Date.now()}.${fileExtension}`);
+    
+    addCertificateBtn.disabled = true;
+    addCertificateBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Uploading...';
+    
+    const snapshot = await certificateRef.put(file);
+    const url = await snapshot.ref.getDownloadURL();
+    
+    const certificateData = {
+      name: file.name,
+      url: url,
+      userId: userId,
+      uploadedAt: new Date().toISOString()
+    };
+    
+    const newCertificateRef = database.ref('certificates').push();
+    await newCertificateRef.set(certificateData);
+    
+    showToast('Certificate uploaded successfully!');
+    e.target.value = '';
+    addCertificateBtn.disabled = false;
+    addCertificateBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add Certificate';
+  } catch (error) {
+    console.error('Error uploading certificate:', error);
+    showToast('Error uploading certificate', true);
+    addCertificateBtn.disabled = false;
+    addCertificateBtn.innerHTML = '<i class="fas fa-plus me-1"></i> Add Certificate';
+  }
+}
+
+function loadUserCertificates(userId) {
+  if (!userId) return;
+  
+  database.ref('certificates').orderByChild('userId').equalTo(userId).on('value', (snapshot) => {
+    const certificates = [];
+    snapshot.forEach((childSnapshot) => {
+      const cert = childSnapshot.val();
+      cert.id = childSnapshot.key;
+      certificates.unshift(cert);
+    });
+    
+    if (certificatesList) {
+      certificatesList.innerHTML = '';
+      certificates.slice(0, 3).forEach(cert => {
+        certificatesList.appendChild(createCertificateElement(cert, true));
+      });
+    }
+    
+    if (allCertificates) {
+      allCertificates.innerHTML = '';
+      certificates.forEach(cert => {
+        allCertificates.appendChild(createCertificateElement(cert, false));
+      });
+    }
+  }, (error) => {
+    console.error('Error loading certificates:', error);
+    showToast('Error loading certificates', true);
+  });
+}
+
+function createCertificateElement(cert, isSmall) {
+  const col = document.createElement('div');
+  col.className = isSmall ? 'col-4' : 'col-md-6 col-lg-4 mb-3';
+  
+  const card = document.createElement('div');
+  card.className = 'card h-100 certificate-card';
+  
+  const date = new Date(cert.uploadedAt).toLocaleDateString();
+  const fileName = cert.name.length > 20 ? cert.name.substring(0, 17) + '...' : cert.name;
+  
+  card.innerHTML = `
+    <div class="card-body text-center">
+      <i class="fas fa-certificate fa-3x text-warning mb-3"></i>
+      <h6 class="card-title">${fileName}</h6>
+      <small class="text-muted">Uploaded on ${date}</small>
+    </div>
+    <div class="card-footer bg-transparent">
+      <a href="${cert.url}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
+        <i class="fas fa-eye me-1"></i> View
+      </a>
+    </div>
+  `;
+  
+  col.appendChild(card);
+  return col;
+}
+
+function showFeed() {
+  document.querySelector('.container').classList.remove('d-none');
+  loadFeedPosts();
+}
+
+function loadStories() {
+  if (!currentUser) return;
+  
+  while (storiesContainer.children.length > 1) {
+    storiesContainer.removeChild(storiesContainer.lastChild);
+  }
+
+  database.ref('users').limitToFirst(10).once('value', snapshot => {
+    const users = snapshot.val();
+    if (users) {
+      Object.keys(users).forEach(userId => {
+        if (userId !== currentUser.uid) {
+          const user = users[userId];
+          const storyItem = document.createElement('div');
+          storyItem.className = 'story-item';
+          storyItem.innerHTML = `
+            <div class="story-circle">
+              <div class="story-inner">
+                <img src="${user.profileImage || 'https://via.placeholder.com/64'}" class="img-fluid" alt="Story">
+              </div>
+            </div>
+            <div class="story-username">${user.name || 'User'}</div>
+          `;
+          storiesContainer.appendChild(storyItem);
+        }
+      });
+    }
+  }, error => {
+    console.error('Error loading stories:', error);
+  });
+}
+
+function loadSuggestions() {
+  if (!currentUser) return;
+  
+  suggestionsList.innerHTML = '';
+
+  database.ref('users').limitToLast(5).once('value', snapshot => {
+    const users = snapshot.val();
+    if (users) {
+      Object.keys(users).forEach(userId => {
+        if (userId !== currentUser.uid) {
+          const user = users[userId];
+          const suggestionItem = document.createElement('div');
+          suggestionItem.className = 'suggestion-item d-flex justify-content-between align-items-center';
+          suggestionItem.innerHTML = `
+            <div class="d-flex align-items-center">
+              <img src="${user.profileImage || 'https://via.placeholder.com/32'}" 
+                   class="rounded-circle me-3" width="32" height="32">
+              <div>
+                <div class="fw-bold">${user.name || 'User'}</div>
+                <small class="text-muted">Suggested for you</small>
+              </div>
+            </div>
+            <a href="#" class="text-primary">Follow</a>
+          `;
+          suggestionsList.appendChild(suggestionItem);
+        }
+      });
+    }
+  }, error => {
+    console.error('Error loading suggestions:', error);
+  });
+}
+
+function loadFeedPosts() {
+  if (!currentUser) return;
+  
+  feedPosts.innerHTML = '<div class="spinner-container"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+  database.ref('posts').orderByChild('createdAt').limitToLast(20).once('value', snapshot => {
+    const posts = snapshot.val();
+    if (posts) {
+      feedPosts.innerHTML = '';
+      const postsArray = Object.keys(posts).map(postId => ({ ...posts[postId], id: postId }));
+      postsArray.reverse().forEach(post => {
+        const postElement = createFeedPostElement(post);
+        feedPosts.appendChild(postElement);
+      });
+    } else {
+      feedPosts.innerHTML = `
+        <div class="text-center py-5">
+          <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+          <h5>No Posts Yet</h5>
+          <p>When you follow people, you'll see their photos here.</p>
+        </div>
+      `;
+    }
+  }, error => {
+    console.error('Error loading feed:', error);
+    feedPosts.innerHTML = `
+      <div class="text-center py-5">
+        <i class="fas fa-exclamation-triangle fa-4x text-danger mb-3"></i>
+        <h5>Error Loading Feed</h5>
+        <p>There was a problem loading the feed. Please try again later.</p>
+      </div>
+    `;
+  });
+}
+
+function createFeedPostElement(post) {
+  const postElement = document.createElement('div');
+  postElement.className = 'post-card mb-4';
+  
+  const date = new Date(post.createdAt).toLocaleString();
+  const liked = currentUser && post.likes && post.likes[currentUser.uid];
+  
+  postElement.innerHTML = `
+    <div class="post-header d-flex align-items-center">
+      <img src="${post.authorPhoto || 'https://via.placeholder.com/32'}" 
+           class="rounded-circle me-3" width="32" height="32">
+      <strong>${post.authorName}</strong>
+    </div>
+    ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image" alt="Post">` : ''}
+    <div class="post-actions d-flex">
+      <button class="btn btn-link text-dark me-2 like-btn" data-postid="${post.id}">
+        <i class="${liked ? 'fas' : 'far'} fa-heart fa-lg ${liked ? 'text-danger' : ''}"></i>
+      </button>
+      <button class="btn btn-link text-dark me-2">
+        <i class="far fa-comment fa-lg"></i>
+      </button>
+      <button class="btn btn-link text-dark">
+        <i class="far fa-paper-plane fa-lg"></i>
+      </button>
+      <button class="btn btn-link text-dark ms-auto">
+        <i class="far fa-bookmark fa-lg"></i>
+      </button>
+    </div>
+    <div class="post-likes">
+      ${post.likes ? Object.keys(post.likes).length : 0} likes
+    </div>
+    <div class="post-caption">
+      <strong>${post.authorName}</strong> ${post.content || ''}
+    </div>
+    <div class="post-comments">
+      View all ${post.comments || 0} comments
+    </div>
+    <div class="post-time">
+      ${date}
+    </div>
+  `;
+  
+  const likeBtn = postElement.querySelector('.like-btn');
+  likeBtn.addEventListener('click', () => toggleLike(post.id));
+  
+  return postElement;
+}
+
+async function toggleLike(postId) {
+  if (!currentUser) {
+    showLoginModal();
+    return;
+  }
+  
+  try {
+    const likeRef = database.ref(`posts/${postId}/likes/${currentUser.uid}`);
+    const snapshot = await likeRef.once('value');
+    
+    if (snapshot.exists()) {
+      await likeRef.remove();
+    } else {
+      await likeRef.set(true);
+    }
+  } catch (error) {
+    console.error('Error toggling like:', error);
+    showToast('Error liking post', true);
+  }
+}
+
+function searchUsers() {
+  const searchTerm = searchInput.value.trim().toLowerCase();
+  if (!searchTerm) {
+    searchResults.innerHTML = '';
+    return;
+  }
+
+  database.ref('users').once('value', snapshot => {
+    const users = snapshot.val();
+    searchResults.innerHTML = '';
+    
+    if (users) {
+      Object.keys(users).forEach(userId => {
+        const user = users[userId];
+        const userName = user.name?.toLowerCase() || '';
+        const userEmail = user.email?.toLowerCase() || '';
+        
+        if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
+          const isCurrentUser = userId === currentUser?.uid;
+          const userElement = document.createElement('div');
+          userElement.className = 'd-flex align-items-center mb-3';
+          userElement.innerHTML = `
+            <img src="${user.profileImage || 'https://via.placeholder.com/44'}" 
+                 class="rounded-circle me-3" width="44" height="44">
+            <div>
+              <div class="fw-bold">${user.name || 'User'}</div>
+              <small class="text-muted">${user.email || ''}</small>
+            </div>
+            ${!isCurrentUser ? `<a href="#" class="btn btn-primary btn-sm ms-auto follow-btn" data-userid="${userId}">Follow</a>` : ''}
+          `;
+          searchResults.appendChild(userElement);
+          
+          if (!isCurrentUser) {
+            const followBtn = userElement.querySelector('.follow-btn');
+            followBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              followUser(userId);
+            });
+          }
+        }
+      });
+      
+      if (searchResults.children.length === 0) {
+        searchResults.innerHTML = '<div class="text-muted">No users found</div>';
+      }
+    }
+  }, error => {
+    console.error('Error searching users:', error);
+    searchResults.innerHTML = '<div class="text-danger">Error searching users</div>';
+  });
+}
+
+async function followUser(userId) {
+  if (!currentUser) {
+    showLoginModal();
+    return;
+  }
+  
+  try {
+    const followRef = database.ref(`following/${currentUser.uid}/${userId}`);
+    const snapshot = await followRef.once('value');
+    
+    if (snapshot.exists()) {
+      await followRef.remove();
+      await database.ref(`followers/${userId}/${currentUser.uid}`).remove();
+      showToast('You have unfollowed this user');
+    } else {
+      await followRef.set(true);
+      await database.ref(`followers/${userId}/${currentUser.uid}`).set(true);
+      showToast('You are now following this user');
+    }
+    
+    const followBtn = document.querySelector(`.follow-btn[data-userid="${userId}"]`);
+    if (followBtn) {
+      followBtn.textContent = snapshot.exists() ? 'Follow' : 'Following';
+      followBtn.classList.toggle('btn-primary');
+      followBtn.classList.toggle('btn-secondary');
+    }
+  } catch (error) {
+    console.error('Error following user:', error);
+    showToast('Error following user', true);
+  }
+}
+
+function handleImageSelect(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      postPreviewImage.src = event.target.result;
+      postPreview.classList.remove('d-none');
+      uploadSection.classList.add('d-none');
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function sharePost() {
+  if (!currentUser) {
+    showLoginModal();
+    return;
+  }
+  
+  if (!postImageInput.files[0]) {
+    showToast('Please select an image to post', true);
+    return;
+  }
+  
+  const file = postImageInput.files[0];
+  const fileExtension = file.name.split('.').pop();
+  const storageRef = storage.ref(`posts/${currentUser.uid}/${Date.now()}.${fileExtension}`);
+  
+  sharePostBtn.disabled = true;
+  sharePostBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sharing...';
+  
+  try {
+    const snapshot = await storageRef.put(file);
+    const url = await snapshot.ref.getDownloadURL();
+    
+    const postData = {
+      authorId: currentUser.uid,
+      authorName: currentUser.displayName || 'User',
+      authorPhoto: currentUser.photoURL || 'https://via.placeholder.com/150',
+      imageUrl: url,
+      content: postCaption.value.trim(),
+      likes: {},
+      comments: 0,
+      createdAt: new Date().toISOString()
+    };
+    
+    const newPostRef = await database.ref('posts').push(postData);
+    
+    const userRef = database.ref(`users/${currentUser.uid}`);
+    const userSnapshot = await userRef.once('value');
+    const currentCount = userSnapshot.val()?.postCount || 0;
+    await userRef.update({ postCount: currentCount + 1 });
+    
+    postImageInput.value = '';
+    postCaption.value = '';
+    postPreview.classList.add('d-none');
+    uploadSection.classList.remove('d-none');
+    sharePostBtn.disabled = false;
+    sharePostBtn.textContent = 'Share';
+    
+    const modalElement = document.getElementById('createPostModal');
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    modal.hide();
+    
+    showToast('Post shared successfully!');
+  } catch (error) {
+    console.error('Error sharing post:', error);
+    showToast('Error sharing post', true);
+    sharePostBtn.disabled = false;
+    sharePostBtn.textContent = 'Share';
+  }
+}
+
+// Initialize real-time listeners
+document.addEventListener('DOMContentLoaded', () => {
+  database.ref('posts').on('child_changed', snapshot => {
+    const post = snapshot.val();
+    const postId = snapshot.key;
+    
+    const likesElement = document.querySelector(`[data-postid="${postId}"] .post-likes`);
+    if (likesElement) {
+      const likeCount = post.likes ? Object.keys(post.likes).length : 0;
+      likesElement.textContent = `${likeCount} likes`;
+    }
+    
+    if (currentUser) {
+      const likeBtn = document.querySelector(`[data-postid="${postId}"] .like-btn i`);
+      if (likeBtn) {
+        const liked = post.likes && post.likes[currentUser.uid];
+        likeBtn.className = `${liked ? 'fas' : 'far'} fa-heart fa-lg ${liked ? 'text-danger' : ''}`;
+      }
+    }
+  });
+  
+  database.ref('posts').orderByChild('createdAt').limitToLast(1).on('child_added', snapshot => {
+    const post = snapshot.val();
+    post.id = snapshot.key;
+    
+    if (!document.querySelector(`[data-postid="${post.id}"]`)) {
+      const postElement = createFeedPostElement(post);
+      if (feedPosts.firstChild?.classList?.contains('spinner-container')) {
+        feedPosts.innerHTML = '';
+      }
+      feedPosts.insertBefore(postElement, feedPosts.firstChild);
+    }
+  });
+});
+        
   </script>
 </body>
 </html>
